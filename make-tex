@@ -1,0 +1,5 @@
+#!/bin/bash
+pdflatex -synctex=1 -interaction=nonstopmode "uebung1".tex
+#pdflatex -synctex=1 -interaction=nonstopmode "zettel1".tex
+evince uebung1.pdf &
+#evince zettel1.pdf &
