@@ -1,15 +1,31 @@
+/* gcc -o uebung1 uebung1.c -lm
+ * ./uebung1
+ * Marvin Schmitz, Fabian Schmidt
+ *
+ * Dieses Programm bestimmt die Energie eines Ions
+ * in einem NaCl-Gitter mithilfe der Evjen-Methode.
+ */
+
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 
-/*kompilieren mit: gcc -Wall -o test test.c -lm */
+const double e = 1.602176565E-19;     /* Elementarladung */
+const double eps_0 = 8.854187817E-12; /* Permittivität */
 
-/* Ziel ist es die Energie eines Ions im Na-Cl Gitter zu bestimmen diese
- * approximieren wir mit der Evjen Methode wie in der Problembeschreibung
- * vermerkt */
+
+/*
+ * Berechnet (-1)^i.
+ */
+double powm1(int i){
+	int ungerade = i & 1;
+	return (1^(-ungerade))+ungerade;
+}
+
 
 /* definiere Funktion, die mir die Madlung Konstante errechnet im 2dim Fall */
-double madlung_2dim (int n) {
+double madelung_2dim (int n) {
 	/* definiere Laufvariablen */
 	int i;
 	int j;
@@ -24,15 +40,15 @@ double madlung_2dim (int n) {
 			else {	
 				/*auf der Kante*/		
 				if (abs(i)==n && abs(j)==n) {
-					sum += pow(-1, i+j)/(4*sqrt(i*i+j*j));
+					sum += powm1(i+j)/(4*sqrt(i*i+j*j));
 				}
 				/*auf der Seite*/
 				else if (abs(i)==n || abs(j)==n) {
-					sum += pow(-1, i+j)/(2*sqrt(i*i+j*j));
+					sum += powm1(i+j)/(2*sqrt(i*i+j*j));
 				}
 				/*im Wuerfel*/
 				else {
-					sum += pow(-1, i+j)/(sqrt(i*i+j*j));
+					sum += powm1(i+j)/(sqrt(i*i+j*j));
 				}
 			}
 		}
@@ -40,10 +56,11 @@ double madlung_2dim (int n) {
 	return fabs(sum);
 }
 
-/*--------------------------------------------------------------------*/
 
-/*analog zu madlung2_dim definiere ich fkt. für dreidimensionalen Wuerfel*/
-double madlung_3dim (int n) {
+/*
+ * Berechnet die Madelung-Konstante eines 3D-Quaders mit Kantenlänge n.
+ */
+double madelung3d (int n) {
 	/* definiere Laufvariablen */
 	int i;
 	int j;
@@ -54,21 +71,19 @@ double madlung_3dim (int n) {
 		for (j=-n; j<=n; j++) {
 			for (k=-n; k<=n; k++) {
 				if (i==0 && j==0 && k==0) {
-					sum = sum;
-				}
-				else {			
+				} else {
 					if (abs(i)==n && abs(j)==n && abs(k)==n) {
-						sum += pow(-1, i+j+k)/(8*sqrt(i*i+j*j+k*k));
+						sum += powm1(i+j+k)/sqrt(i*i+j*j+k*k)/8;
 					}
 					else if (abs(i)==n || abs(j)==n || abs(k)==n) {
-						sum += pow(-1, i+j+k)/(2*sqrt(i*i+j*j+k*k));
+						sum += powm1(i+j+k)/sqrt(i*i+j*j+k*k)/2;
 					}
 					else if ((abs(i)==n && abs(j)==n) || (abs(i)==n && 
 							 abs(k)==n) || (abs(k)==n && abs(j)==n)) {
-						sum += pow(-1, i+j+k)/(4*sqrt(i*i+j*j+k*k));
+						sum += powm1(i+j+k)/sqrt(i*i+j*j+k*k)/4;
 					}
 					else {
-						sum += pow(-1, i+j+k)/(sqrt(i*i+j*j+k*k));
+						sum += powm1(i+j+k)/sqrt(i*i+j*j+k*k);
 					}
 				}
 			}
@@ -77,51 +92,49 @@ double madlung_3dim (int n) {
 	return fabs(sum);
 }
 
-/*--------------------------------------------------------------------*/
-			
-/* Definiere Funktion, die Energie berechnet*/
-double bindungsenergie (int dim, double d, int var) {
-	/* d Gitterkonstante (Abstand) */
-	/* var ist die Genauigkeit */
+
+/* Berechnet die Bindungsenergie eines Ions in einem NaCl-Kristall
+ * dim - 2: 2D-Kristall, 3: 3D-Kristall
+ * d   - Gitterkonstante
+ * var - gewünschte Genauigkeit
+ */
+double bindungsenergie (int dim, double d, double var) {
 	int n = 1;
-	double E_0;
+	double E_alt;
 	double E_neu;
-	double e = 1.602176565*pow(10,-19);
-	double eps_0 = 8.854187817*pow(10,-12);
+
 	/* definiere Konstante k */
 	double k = 1/(4*M_PI*eps_0)*pow(e,2);
 	/* Fallunterscheidung fuer 3dim, 2dim */
 	if (dim == 2) {
-		E_0 = madlung_2dim(1)*k/d;
-		E_neu = madlung_2dim(2)*k/d;
+		E_alt = madelung_2dim(1)*k/d;
+		E_neu = madelung_2dim(2)*k/d;
 		/* benutze var um Iteration ueber n zu bestimmen (Groesse des Wuerfels) */
-		while (fabs((E_neu)/(E_0)-1)>var) {
+		while (fabs((E_neu)/(E_alt)-1)>var) {
 			n++;
-			E_0 = E_neu;
-			E_neu = madlung_2dim(n)*k/d;					
+			E_alt = E_neu;
+			E_neu = madelung_2dim(n)*k/d;
 		}
-	}
-	else {
-		E_0 = madlung_3dim(1)*k/d;
-		E_neu = madlung_3dim(2)*k/d;
+	} else {
 		/* benutze var um Iteration ueber n zu bestimmen (Groesse des Wuerfels) */
-		while (fabs((E_neu)/(E_0)-1)>var) {
+		do {
+			E_alt = E_neu;
+			E_neu = madelung3d(n)*k/d;
+			printf("E(n = %i) = %.20f\n",n,E_neu);
 			n++;
-			E_0 = E_neu;
-			E_neu = madlung_2dim(n)*k/d;
-		}	
+		} while (fabs(E_neu/E_alt-1) > var);
 	}
 	return E_neu;
 }
 
-/*--------------------------------------------------------------------*/
 
 int main () {
 	/* Genauigkeit */
 	double var = pow(10,-5);
 	long double Gitterkonstante = 5.62*pow(10, -10);
-	/*bindungsenergie hat 3 parameter: 1. dimension, 2. Gitterkonstante, 3. Genauigkeit*/
-	double Energie = bindungsenergie(3, Gitterkonstante, var);  
-	printf("%E\n", Energie);
+	int dim = 3;
+	double Energie = bindungsenergie(dim, Gitterkonstante, var);
+	/* TODO: Einheit!!*/
+	printf("Bindungsenergie in %iD mit einer Genauigkeit von %E beträgt:\n %E Einheit??\n",dim,var,Energie);
 	return 0;	
 }
