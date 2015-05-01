@@ -65,11 +65,11 @@ double madelung3d (int n) {
 				} else if (abs(i)==n && abs(j)==n && abs(k)==n) {
 					sum += powm1(i+j+k)/sqrt(i*i+j*j+k*k)/8;
 
-				} else if (abs(i)==n || abs(j)==n || abs(k)==n) {
+				} else if ((i==0 || j==0 || k==0) && (abs(i)==n || abs(j)==n || abs(k)==n)) {
 					sum += powm1(i+j+k)/sqrt(i*i+j*j+k*k)/2;
 
-				} else if ((abs(i)==n && abs(j)==n) || (abs(i)==n && 
-					   abs(k)==n) || (abs(k)==n && abs(j)==n)) {
+				} else if ((i==0 || j==0 || k==0) && ((abs(i)==n && abs(j)==n) || (abs(i)==n && 
+							 abs(k)==n) || (abs(k)==n && abs(j)==n))) {
 					sum += powm1(i+j+k)/sqrt(i*i+j*j+k*k)/4;
 
 				} else {
@@ -101,7 +101,7 @@ double bindungsenergie (int dim, double d, double var) {
 		do {
 			m_alt = m_neu;
 			m_neu = madelung2d(n);
-			printf("E(n = %i) = %.20f\n",n,m_neu);
+		//	printf("E(n = %i) = %.20f\n",n,m_neu);
 			n++;
 		} while (fabs(m_neu/m_alt-1) > var);
 	} else {
@@ -109,10 +109,11 @@ double bindungsenergie (int dim, double d, double var) {
 		 * bis die Abweihung zwischen E(n) und E(n-1) kleiner als
 		 * die gewünschte Genauigkeit ist.
 		 */
+		n=90;
 		do {
 			m_alt = m_neu;
 			m_neu = madelung3d(n);
-			printf("E(n = %i) = %.20f\n",n,m_neu);
+		//	printf("E(n = %i) = %.20f\n",n,m_neu);
 			n++;
 		} while (fabs(m_neu/m_alt-1) > var);
 	}
@@ -126,7 +127,10 @@ int main () {
 	long double Gitterkonstante = 5.62E-10;
 	int dim = 2;
 	double Energie = bindungsenergie(dim, Gitterkonstante, var);
-	/* TODO: Einheit!!*/
-	printf("Bindungsenergie in %iD mit einer Genauigkeit von %E beträgt:\n %E Einheit??\n",dim,var,Energie);
+	printf("Bindungsenergie in %iD mit einer Genauigkeit von %E beträgt:\n %E J\n",dim,var,Energie);
+	dim = 3;
+	Energie = bindungsenergie(dim, Gitterkonstante, var);
+	printf("Bindungsenergie in %iD mit einer Genauigkeit von %E beträgt:\n %E J\n",dim,var,Energie);
+
 	return 0;	
 }
