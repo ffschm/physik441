@@ -1,0 +1,42 @@
+\documentclass[ngerman]{scrartcl}
+
+\KOMAoptions{fontsize=11pt,paper=a4}
+\KOMAoptions{DIV=14}
+
+\usepackage{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[autostyle=true]{csquotes}
+\usepackage{amsmath}
+\usepackage[varg]{txfonts}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Übungsblatt 1 zur Vorlesung 'Numerische Methoden der Physik' SS 2015}
+\subtitle{Madelung-Energie des NaCl-Kristalls}
+\author{Fabian Schmidt und Marvin Schmitz}
+\maketitle
+
+\newpage
+
+\section*{Physikalische Beschreibung des Problems}
+
+Wir betrachten ein NaCl-Kristallgitter. Wir wollen die Energie eines Ions im Kristallgitter numerisch bestimmen.
+Dies wollen wir durch Summation der Einzelbeiträge erreichen: \\ \\
+$ V_{i,j} = \frac{1}{4\pi \epsilon_0} \cdot \frac{e_ie_j}{r_i,j}\ \ mit\ \ r_{i,j} = a\cdot \sqrt{(i_1-j_1)^2+(i_2-j_2)^2+(i_3-j_3)^2} $\\ \\
+Dabei ist a der Gitterabstand und $e_{i,j}$ jeweils positiv für ein Kation und negativ für ein Anion. Die gewünschte Genauigkeit der Approximation soll $10^{-5}$ sein. Desweiteren betrachten wir zusätzlich nochmal den Fall eines flachen Kristallgitters also $i_3=j_3$.
+
+\section*{Modellierung des Problems}
+
+Berechnet werden soll die Madelung-Energie. Dazu führen wir die Madelung-Konstante ein. Sei $E_{IP}$ die Energie eines Ions im Ionenpaar und $E_{IG}$ die Energie eines Ions im Gitter, dann ergibt sich:\\ \\
+$ E_{IG} = n_1 \cdot \frac{E_{IP}}{c_1} + n_2\cdot \frac{E_{IP}}{c_2} + n_3\cdot \frac{E_{IP}}{c_3} + ... $ \\ \\
+Wobei $c_1$ ein für den Abstand des Ions spezifische Konstante ist und $n_1$ die Häufigkeit des Ions (Quelle: Wikipedia Madelung-Konstante). Diese Konstanten kann man zusammenfassen zu der Madelung-Konstante:\\ \\
+$ E_{IG} = \alpha \cdot E_{IP} $ 
+
+
+
+
+
+\end{document}
