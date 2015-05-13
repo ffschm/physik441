@@ -1,0 +1,3 @@
+#!/bin/bash
+
+colorgcc -g -Wall -Wpedantic -o uebung2 uebung2.c plot.c -lm
