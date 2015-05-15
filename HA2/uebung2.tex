@@ -36,6 +36,16 @@ Um die Stromdichte zu berechnen müssen wir die Kelvinfunktionen ($ber_0$ und $b
 \begin{equation*}
 ber_0(x) = 1+ \sum_{k\ge1} \frac{(-1)^k}{[(2k)!]^2}(x/2)^{4k} \ \ und\ \ bei_0(x) = 1+ \sum_{k\ge1} \frac{(-1)^k}{[(2k+1)!]^2}(x/2)^{4k+2}
 \end{equation*}
+Bei der Implementierung werden wir eine andere Darstellung der Summe verwenden, welche rekursiv formuliert ist und dadurch schneller berechnet wird.
+Wir können die obige Summe schreiben als:
+\begin{equation*}
+ber_0(x) = 1+\sum_{k=0}^{\infty} t_{k+1}^{ber}\ mit\ t_0=1\ und\ t_{k+1}^{ber}=\frac{-1}{(4k^2+6k+2)^2}(x/2)^4 t_k
+\end{equation*}
+Die andere lautet:
+\begin{equation*}
+bei_0(x) = \sum_{k=0}^{\infty}t_{k+1}^{bei}\ mit\ t_0^{bei}= (x/2)^2\ und\ t_{k+1}^{bei}=\frac{-1}{(4k^2+10k+6)^2}(x/2)^4t_k 
+\end{equation*}
+
 Für einen größeren Parameterbereich approximieren wir die Kelvinfunktionen als Real- und Imaginärteil der über asymptotische Entwicklung berechneten Besselfunktion:
 \begin{equation*}
 J(z) = \sqrt{\frac{2}{z\pi}} \cdot \cos(z-\pi/4)\ mit\ z \in \mathbb{C}
@@ -43,19 +53,23 @@ J(z) = \sqrt{\frac{2}{z\pi}} \cdot \cos(z-\pi/4)\ mit\ z \in \mathbb{C}
 
 \section*{Implementierung der Lösung}
 
-Um die vorhin erwähnte Modellierung zu ermöglichen müssen wir die Funktionen bei0 und ber0 definieren. Sie entsprechen unseren Kelvinfunktionen. Im Parameterbereich < 30 ist ber0 als ber ps0 definiert. Dabei ist ber ps0 die über die Potenzreihendarstellung approximierte Funktion. Wir implementieren die Potenzreihe über eine Schleife, die nach jeder Iteration der Variable ber neu den Wert der Variable t hinzuaddiert und abbricht, wenn der Unterscheid zwischen dem n-ten Glied der Partialsummenfolge und dem n+1-ten Glied kleiner als die Genaiuigkeit prec ist. Dabei ist t ein rekursiv definierter Ausdruck, der für das jeweilige k genau der Folgenvorschrift der Summe entspricht. Durch die Rekursion berechnet sich ber ps0 schneller. Für einen größeren Paramterbereich ist ber0 gleich dem Realteil der komplexen Besselfunktion 0-ter Ordnung $J(x\sqrt{-i})$. Hier ist $ x = \kappa \rho $. Um $J(x\sqrt{-i})$ zu implementieren haben wir den Header <complex.h> hinzugefügt. Mit ihm können wir J(z) als komplexe Funktion betrachten und für ber0 den Realteil und für bei0 den Imaginärteil nehmen. Damit haben wir die Kelvinfunktionen implementiert. Um ihre Ableitungen zu berechnen definiern wir die Ableitungen derive bei0 und derive ber0. Beiden Funktionen übergeben wir neben double x und double prec einen Parameter double h. Mit ihm können wir die Ableitung dann über den Differenzenquotient berechnen, der für $h \to 0$ der Ableitung am Ort x entspricht. Um diese möglichst genau zu bestimmen wählen wir h sehr klein. Mit Hilfe der obigen Funktionen müssen wir zur Bestimmung der Stromdichte nur noch in die gegebene Formel einsetzen. Zusätzlich zur Berechnung der Stromdichte haben wir eine Möglichkeit entwickelt die Besselfunktionen mit Zuhilfenahme von gnuplot zu plotten. Dazu importieren wir das Modul "plot.h" mit dessen Hilfe wir die Funktion plotIT() definieren, die die in plot.c definierte Funktion plot(double (*funcPtr)(double),double xmin, double xmax, int n) aufruft für eine gegebene Funktion. Die Funktion plot funktioniert wie folgt wir berechnen die jeweiligen Stützstellen und die dazugehörigen Funktionswerte und übergeben diese auf einen Zeiger von einem Objekt des Dattentyps FILE. Mit dem BEfehl fprintf geben wir diese aus.
+Um die vorhin erwähnte Modellierung zu ermöglichen, definieren wir die Kelvin-Funktionen \verb!bei! und \verb!ber!.
+Im Parameterbereich < 10 ist ber über \verb!ber_ps! definiert.
+Dabei ist \verb!ber_ps! der über die Potenzreihendarstellung approximierte Realteil der Besselfunktion.
+Wir implementieren die Potenzreihe durch eine Schleife, die nach jeder Iteration der Variable \verb!ber_neu! den Wert der Variable t hinzuaddiert und abbricht,
+wenn der Unterscheid zwischen dem n-ten Glied der Partialsummenfolge und dem n+1-ten Glied kleiner als die Genaiuigkeit prec ist. Dabei ist t ein rekursiv definierter Ausdruck, der für das jeweilige k genau der Folgenvorschrift der Summe entspricht.
+Durch die Rekursion wird die Berechnung von mehr als 15 Termen ermöglicht, da sonst die Fakultät einen overflow von \verb!t! auslösen würde.
+
+Für einen größeren Paramterbereich ist \verb!ber! gleich dem Realteil der komplexen Besselfunktion 0-ter Ordnung $J(x\sqrt{-i})$.
+Hier ist $ x = \kappa \rho $. Um $J(x\sqrt{-i})$ zu implementieren haben wir den Header <complex.h> hinzugefügt. Mit ihm können wir J(z) als komplexe Funktion betrachten und für ber den Realteil und für bei den Imaginärteil nehmen. Damit haben wir die Kelvinfunktionen implementiert. Um ihre Ableitungen zu berechnen definiern wir die Ableitungen derive bei und derive ber. Beiden Funktionen übergeben wir neben double x und double prec einen Parameter double h. Mit ihm können wir die Ableitung dann über den Differenzenquotient berechnen, der für $h \to 0$ der Ableitung am Ort x entspricht. Um diese möglichst genau zu bestimmen wählen wir h sehr klein. Mit Hilfe der obigen Funktionen müssen wir zur Bestimmung der Stromdichte nur noch in die gegebene Formel einsetzen. Zusätzlich zur Berechnung der Stromdichte haben wir eine Möglichkeit entwickelt die Besselfunktionen mit Zuhilfenahme von gnuplot zu plotten. Dazu importieren wir das Modul "plot.h" mit dessen Hilfe wir die Funktion plotIT() definieren, die die in plot.c definierte Funktion plot(double (*funcPtr)(double),double xmin, double xmax, int n) für eine gegebene Funktion aufruft. Die Funktion plot funktioniert wie folgt wir berechnen die jeweiligen Stützstellen und die dazugehörigen Funktionswerte und übergeben diese auf einen Zeiger von einem Objekt des Dattentyps FILE. Mit dem BEfehl fprintf geben wir diese aus.
 
 \section*{Ergebnis}
 
-Als Stromdichte erhalten wir:\\ \\
-j($\kappa \rho$) = \\
-$\kappa$ = 
-\\
-Die geplotteten Funktionenund ihre Ableitungen sehen folgendermaßen aus:\\
+Wir erhalten als Ergebnis negative Stromdichten. Dies war nicht zu erwarten.
+Nimmt man den Betrag des Ergbnisses, so kann jedoch zum Teil das erwartete Ergebnis betrachtet werden.
+Je größer die Frequenz ist, desto höher ist die Stromdichte bei großen Radien, wohingegen im Innneren des
+Leiters die Stromdichte null wird.\\
+\includegraphics{plot}
 
-
-
-
- 
 
 \end{document}

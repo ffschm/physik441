@@ -1,4 +1,4 @@
-/* gcc -o uebung2 uebung2.c plot.c -lm
+/* gcc -std=gnu99 -o uebung2 uebung2.c plot.c -lm
  * ./uebung2
  * Marvin Schmitz, Fabian Schmidt
  *
@@ -13,7 +13,9 @@
 
 #include "plot.h"
 
-const double SI_C = 299792458; /* m/s */
+const double SI_C  = 299792458; /*  m/s Lichtgeschwindigkeit */
+const double CGS_C = 29979245800; /* cm/s Lichtgeschwindigkeit */
+const double SI_EPSILON0 = 8.85418781762*1E-12; /* As/V/m Dielektrizitätskonstante */
 const double h = 1E-11; /* infinitissimale Länge der Ableitung */
 const double prec = 1E-6; /* Abbruchbedingung der Reihendarstellung */
 
@@ -118,33 +120,49 @@ double j_1(double kappa, double rho, double rho0) {
 	return (ber(kappa*rho)+I*bei(kappa*rho))/(derive_ber(kappa*rho0)-I*derive_bei(kappa*rho0));
 }
 
+/* Falls plot=1, Daten können an gnuplot übergeben werden. */
+void show_skin_effect(int plot) {
+//	const double omega = 2*M_PI*5*1E10;  /* 1/s - Kreisfrequenz bei Frequenz f=50MHz. */
+	const double sigma = 58.0*1E6*1E2/4*M_1_PI/SI_EPSILON0; /* 1/s - elektrische Leitfähigkeit von Kupfer (cgs)*/
+	const double mu = 1-6.4*1E-6;        /* relative Ladungsträgerbeweglichkeit (cgs)*/
+	const double rho0 = 1*1E-2;          /* cm - Leiterradius */
+	const double I0 = 1E-2;              /* A - maximale Stromstärke */
+	
+	if (plot==0) printf("Betrachte Kupfer bei einem Strom von %.2f A in einem Leiter mit Radius %.2f cm.\n",I0,rho0);
 
-void show_skin_effect() {
-	const double omega = 2*M_PI*5*1E10;  /* 1/s - Kreisfrequenz bei Frequenz f=50MHz. */
-	const double sigma = 58.0*1E6;       /* 1/ohm/m - elektrische Leitfähigkeit von Kupfer */
-	const double mu = 1-6.4*1E-6;        /* relative Ladungsträgerbeweglichkeit*/
-	const double rho0 = 1*1E-2;          /* m - Leiterradius */
-	const double I0 = 1;                 /* A - maximale Stromstärke */
-	const double kappa = 2*sqrt(M_PI*mu*sigma*omega)/SI_C;
-	const double prefactor = I0*kappa/2*M_1_PI/rho0;
-
-	const double prec = 1E-8;
+	const int plot_n = 5; /* Anzahl der zu genierierenden Plots im interressanten Bereich */
+	
 	const double xmin = 0;
 	const double xmax = rho0;
-	const int n = 1000;
-
-	double xi[n+1];
-	double fxi[n+1];
+	int x_n = 1000;
+	if (plot==0) x_n = 9;
 
 	int i;
-	for(i=0;i<=n; i++){
-		/* Berechne die n-te Stützstelle */
-    		xi[i]=xmin+i*(xmax-xmin)/((double) n);
-		/* Berechne den Funktionswert an der Stützstelle */
-		fxi[i]=prefactor*j_1(kappa,xi[i],rho0);
-    		
-		printf("%f %f \n",xi[i],fxi[i]);
+	double xi[x_n+1];
+	double fxi[x_n+1];
+
+	double kappa;
+	double prefactor;
+	double omega;
+	/* physikalisch interressante Phänomene in diesem Parameter-Bereich */
+	for(kappa = 1; kappa <= 100; kappa += 100/plot_n) {
+		prefactor = I0*kappa/2*M_1_PI/rho0;
+		omega = kappa*kappa*CGS_C*CGS_C/4*M_1_PI*mu*sigma;
+		if (plot==0) printf("omega = %.1E 1/s\n",omega);
+		if (plot==0) printf("Werte-Tabelle: 1.Spalte: x in cm, 2.Spalte Stromdichte j(x) in cgs.\n");
+		for(i = 0; i <= x_n; i++){
+			
+			/* Berechne die n-te Stützstelle */
+	    		xi[i]=xmin+i*(xmax-xmin)/((double) x_n);
+			
+			/* Berechne den Funktionswert an der Stützstelle */
+			fxi[i]=prefactor*j_1(kappa,xi[i],rho0);
+	    		
+			printf("%f %f \n",xi[i],fxi[i]);
+		}
+			
 	}
+//	const double kappa = 2*sqrt(M_PI*mu*sigma*omega)/CGS_C;
 }
 
 
@@ -171,19 +189,21 @@ void plotIt() {
 //	plot(&bei_big_test,0,100,1000);/* Plottet J0(x)/exp(x/sqrt(2)) zwischen 0 und 100 */
 }
 
-
-
-
-int main(){
-/*	plotIt(); */
-/*	show_skin_effect(); */
-/*	printf("Error: Not Implemented.\n"); */
-/*	test_continuation(); */
-
+void test_functions() {
 	int i;
 	for (i = 5;i <15;i++) {
 		printf("%.2f  %.2f %.2f\n",(double) i,(double) derive_ber(i),(double) derive_bei(i));
 	}
+}
+
+int main(int argc, char *argv[]){
+	int plot = 0;
+	if(argc == 2) plot = 1;
+/*	plotIt(); */
+	show_skin_effect(plot);
+/*	printf("Error: Not Implemented.\n"); */
+/*	test_continuation(); */
+/*	test_functions(); */
 
 	return 0;
 }

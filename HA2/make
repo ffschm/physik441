@@ -1,5 +1,5 @@
 #!/bin/bash
 
-colorgcc -std=gnu99 -Wall -Wpedantic -o uebung2 uebung2.c plot.c -lm
+colorgcc -std=gnu99 -Wall -pedantic -o uebung2 uebung2.c plot.c -lm
 #gcc -std=gnu99 -Wall -pedantic -o uebung2 uebung2.c plot.c -lm
 
