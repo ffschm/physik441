@@ -14,11 +14,13 @@
 #include "plot.h"
 
 const double SI_C = 299792458; /* m/s */
+const double h = 1E-11; /* infinitissimale Länge der Ableitung */
+const double prec = 1E-6; /* Abbruchbedingung der Reihendarstellung */
 
 
 /* Realteil der Besselfunktion 0-ter Ordnung 
  * Berechnung durch eine Potenzreihenentwicklung */
-double ber0_ps (double x, double prec) {
+double ber_ps (double x, double prec) {
 	int k;
 	double t,ber_neu,ber_alt;
 	t = 1;
@@ -38,7 +40,7 @@ double ber0_ps (double x, double prec) {
 
 /* Imaginärteil der Besselfunktion 0-ter Ordnung
  * Berechnung durch eine Potenzreihenentwicklung */
-double bei0_ps (double x, double prec) {
+double bei_ps (double x, double prec) {
 	int k;
 	double t,bei_neu,bei_alt;
 	t = pow(x/2,2);
@@ -66,9 +68,9 @@ double complex J0_an (double complex z) {
 
 /* Definiere den Realteil der Besselfunktion 0-ter Ordnung.
  * Nutze dazu eine Fallunterscheidung. */
-double ber0(double x,double prec) {
+double ber(double x) {
 	if (x<10) {
-		return ber0_ps(x,prec);
+		return ber_ps(x,prec);
 	} else {
 		return creal(J0_an(x*csqrt(-I)));
 	}
@@ -77,9 +79,9 @@ double ber0(double x,double prec) {
 
 /* Definiere den Imaginärteil der Besselfunktion 0-ter Ordnung.
  * Nutze dazu eine Fallunterscheidung. */
-double bei0(double x,double prec) {
+double bei(double x) {
 	if (x<10) {
-		return bei0_ps(x,prec);
+		return bei_ps(x,prec);
 	} else {
 		return cimag(J0_an(x*csqrt(-I)));
 	}
@@ -89,18 +91,16 @@ double bei0(double x,double prec) {
 /* Ableitung des Realteils der Besselfunktion 0-ter Ordnung
  * Berechnung durch 3-Punkt-Methode
  * unter Verwendung der Potenzreihendarstellung */
-double derive_ber0(double x, double prec) {
-	const double h = prec;
-	return (ber0(x+h,prec)-ber0(x-h,prec))/h/2;
+double derive_ber(double x) {
+	return (ber(x+h)-ber(x))/h;
 }
 
 
 /* Ableitung des Imaginärteils der Besselfunktion 0-ter Ordnung
  * Berechnung durch 3-Punkt-Methode
  * unter Verwendung der Potenzreihendarstellung */
-double derive_bei0(double x, double prec) {
-	const double h = prec;
-	return (bei0(x+h,prec)-bei0(x-h,prec))/h/2;
+double derive_bei(double x) {
+	return (bei(x+h)-bei(x))/h;
 }
 
 
@@ -114,40 +114,15 @@ double prefactor(double I0, double kappa, double rho0) {
 
 
 /* Berechne die Stromdichte eines Leiters ohne den konstanten Vorfaktor. */
-double j_1(double kappa, double rho, double rho0, double prec) {
-	return (ber0(kappa*rho,prec)+I*bei0(kappa*rho,prec))/(derive_ber0(kappa*rho0,prec)-I*derive_bei0(kappa*rho0,prec));
-}
-
-
-/* Berechne die Stromdichte eines Leiters.
- *
- * I0 - Stromamplitude
- * rho0 - Radius des Leiters
- * sigma - Elektrische Leitfähigkeit
- * mu - Ladungsträgerbeweglichkeit
- * omega - Kreisfrequenz des Stromes
- * rho - Abstand von der Drahtachse
- * prec - Genauigkeit
- */
-double j(double I0, double rho0, double sigma, double mu, double omega, double rho, double prec) {
-	const double kappa = 2*sqrt(M_PI*mu*sigma*omega)/SI_C;
-	const double prefactor = I0*kappa/2*M_1_PI/rho0;
-
-	return prefactor*j_1(kappa, rho, rho0, prec);
-}
-
-
-/* Berechne für die Kreisfrequenz omega die Verteilung der Stromdichte
- * über den Leiterquerschnitt. */
-void calculate_current_density_test() {
-	printf("Error: Not implemented.\n");
+double j_1(double kappa, double rho, double rho0) {
+	return (ber(kappa*rho)+I*bei(kappa*rho))/(derive_ber(kappa*rho0)-I*derive_bei(kappa*rho0));
 }
 
 
 void show_skin_effect() {
-	const double omega = 2*M_PI*5*1E10;    /* 1/s - Kreisfrequenz bei Frequenz f=50MHz. */
-	const double mu = 58.0*1E6;    /* 1/ohm/m - elektrische Leitfähigkeit von Kupfer */
-	const double sigma = 5*1E-3;   /* m*m/V/s - Ladungsträgerbeweglichkeit*/
+	const double omega = 2*M_PI*5*1E10;  /* 1/s - Kreisfrequenz bei Frequenz f=50MHz. */
+	const double sigma = 58.0*1E6;       /* 1/ohm/m - elektrische Leitfähigkeit von Kupfer */
+	const double mu = 1-6.4*1E-6;        /* relative Ladungsträgerbeweglichkeit*/
 	const double rho0 = 1*1E-2;          /* m - Leiterradius */
 	const double I0 = 1;                 /* A - maximale Stromstärke */
 	const double kappa = 2*sqrt(M_PI*mu*sigma*omega)/SI_C;
@@ -166,7 +141,7 @@ void show_skin_effect() {
 		/* Berechne die n-te Stützstelle */
     		xi[i]=xmin+i*(xmax-xmin)/((double) n);
 		/* Berechne den Funktionswert an der Stützstelle */
-		fxi[i]=prefactor*j_1(kappa,xi[i],rho0,prec);
+		fxi[i]=prefactor*j_1(kappa,xi[i],rho0);
     		
 		printf("%f %f \n",xi[i],fxi[i]);
 	}
@@ -175,40 +150,40 @@ void show_skin_effect() {
 
 /* * * * * * * * Test-Funktionen * * * * * * */
 
-double ber0_small_test(double x) { return ber0(x,1E-6); }
-double bei0_small_test(double x) { return bei0(x,1E-6); }
-double derive_ber0_small_test(double x) { return derive_ber0(x,1E-5); }
-double derive_ber0_big_test(double x) { return derive_ber0(x,1E-5)/exp(x*M_SQRT1_2); }
-double ber0_big_test(double x) { return ber0(x,1E-6)/exp(x*M_SQRT1_2); }
-double bei0_big_test(double x) { return bei0(x,1E-6)/exp(x*M_SQRT1_2); }
+double ber_small_test(double x) { return ber(x); }
+double bei_small_test(double x) { return bei(x); }
+double derive_ber_small_test(double x) { return derive_ber(x); }
+double derive_ber_big_test(double x) { return derive_ber(x)/exp(x*M_SQRT1_2); }
+double derive_bei_small_test(double x) { return derive_bei(x); }
+double derive_bei_big_test(double x) { return derive_bei(x)/exp(x*M_SQRT1_2); }
+double ber_big_test(double x) { return ber(x)/exp(x*M_SQRT1_2); }
+double bei_big_test(double x) { return bei(x)/exp(x*M_SQRT1_2); }
 
 
 void plotIt() {
-	plot(&ber0_small_test,0,10,1000); /* Plottet ber(x) */
-	plot(&bei0_small_test,0,10,1000); /* Plottet ber(x) */
-	plot(&derive_ber0_small_test,0,10,1000); /* Plottet ber'(x) */
-	plot(&derive_ber0_big_test,0,100,1000); /* Plottet ber'(x) */
-	plot(&ber0_big_test,0,100,1000);/* Plottet J0(x)/exp(x/sqrt(2)) zwischen 0 und 100 */
-	plot(&bei0_big_test,0,100,1000);/* Plottet J0(x)/exp(x/sqrt(2)) zwischen 0 und 100 */
+//	plot(&ber_small_test,0,10,1000); /* Plottet ber(x) */
+//	plot(&bei_small_test,0,10,1000); /* Plottet ber(x) */
+	plot(&derive_ber_small_test,0,10,1000); /* Plottet ber'(x) */
+	plot(&derive_ber_big_test,0,100,1000); /* Plottet ber'(x) */
+	plot(&derive_bei_small_test,0,10,1000); /* Plottet ber'(x) */
+	plot(&derive_bei_big_test,0,100,1000); /* Plottet ber'(x) */
+//	plot(&ber_big_test,0,100,1000);/* Plottet J0(x)/exp(x/sqrt(2)) zwischen 0 und 100 */
+//	plot(&bei_big_test,0,100,1000);/* Plottet J0(x)/exp(x/sqrt(2)) zwischen 0 und 100 */
 }
 
 
-void test_continuation () {
-	int i;
-	const double prec = 1E-6;
-
-	printf("ps      as\n");
-	for (i=19;i<22;i++) {
-		printf("%.2f  %.5f  %.5f\n",(double) 0.5*i, (double) ber0_ps(0.5*i,prec),(double) J0_an(0.5*i*csqrt(-I)));
-	}
-}
 
 
 int main(){
 /*	plotIt(); */
-	show_skin_effect();
+/*	show_skin_effect(); */
 /*	printf("Error: Not Implemented.\n"); */
 /*	test_continuation(); */
+
+	int i;
+	for (i = 5;i <15;i++) {
+		printf("%.2f  %.2f %.2f\n",(double) i,(double) derive_ber(i),(double) derive_bei(i));
+	}
 
 	return 0;
 }
