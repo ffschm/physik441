@@ -15,6 +15,8 @@ void plot(double (*funcPtr)(double),double xmin, double xmax, int n) {
 	int i;
 	double xi[n+1];
 	double fxi[n+1];
+	FILE *gnuplotPipe;
+
 	for(i=0;i<=n; i++){
 		/* Berechne die n-te Stützstelle */
     		xi[i]=xmin+i*(xmax-xmin)/((double) n);
@@ -23,7 +25,7 @@ void plot(double (*funcPtr)(double),double xmin, double xmax, int n) {
 	}
 
 	
-	FILE *gnuplotPipe = popen("gnuplot -persistent","w");
+	gnuplotPipe = popen("gnuplot -persistent","w");
 
 	fprintf(gnuplotPipe, "plot '-' \n");
 

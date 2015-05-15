@@ -1,0 +1,75 @@
+\documentclass[ngerman]{scrartcl}
+
+\KOMAoptions{fontsize=11pt,paper=a4}
+\KOMAoptions{DIV=14}
+
+\usepackage{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[autostyle=true]{csquotes}
+\usepackage{amsmath}
+\usepackage[varg]{txfonts}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Übungsblatt 2 zur Vorlesung 'Numerische Methoden der Physik' SS2015}
+\subtitle{Skin Effekt}
+\author{Fabian Schmidt und Marvin Schmitz}
+\maketitle
+
+\newpage
+
+\section*{Physikalische Beschreibung des Problems}
+
+Wir betrachten einen sehr langen zylindrischen Leiter mit konstanter magnetischer und elektrischer Leitfähigkeit ($ \mu\ und\ \sigma $). Der Leiter mit Radius $\rho_0$ wird von einem periodisch schwankenden Gesamtstrom $I(t)=I_0 e^{i\omega t}$ durchflossen. Dabei nehmen wir an, dass $\omega$ so klein ist, dass der Verschiebungsstrom vernachlässigt werden kann. Unser Ziel ist es die Verteilung der Stromdichte $j(\rho)$ über den Leiterquerschnitt für verschieden Werte von $\omega$ zu berechnen.
+Die Stromdichte im Gauss-System ist uns bekannt als:
+\begin{equation*}
+j(\rho)= \frac{I_0 \kappa}{2\pi \rho_0} \frac{ber_0(\kappa \rho)+ibei_0(\kappa \rho)}{ber_0'(\kappa \rho)-ibei_0'(\kappa \rho)}
+\end{equation*}
+Dabei ist $\rho$ der Abstand in Zylinderkoordinaten von der Drahtachse und $\kappa = 2\sqrt{\pi \sigma \mu \omega}/c$. Die Funktionen $ber_0$ und $bei_0$ sind als Real- und Imaginärteil der Besselfunktion 0.Ordnung $J(x\sqrt{-i})$ definiert. Die Funktionen $ber_0'$ und $bei_0'$ sind die jeweiligen Ableitungen.
+
+\section*{Modellierung des Problems}
+
+Um die Stromdichte zu berechnen müssen wir die Kelvinfunktionen ($ber_0$ und $bei_0$) berechnen für einen durch $\kappa$ gegebenen Parameterbereich. Dabei ist $\kappa$ materialabhängig. Wir nehmen für unsere Rechnungen die Leitfähigkeiten von Kupfer an. Die Kelvinfunktionen approximieren wir über ihre Potenzreihendarstellung für ($\kappa \rho<30$) als:
+\begin{equation*}
+ber_0(x) = 1+ \sum_{k\ge1} \frac{(-1)^k}{[(2k)!]^2}(x/2)^{4k} \ \ und\ \ bei_0(x) = 1+ \sum_{k\ge1} \frac{(-1)^k}{[(2k+1)!]^2}(x/2)^{4k+2}
+\end{equation*}
+Bei der Implementierung werden wir eine andere Darstellung der Summe verwenden, welche rekursiv formuliert ist und dadurch schneller berechnet wird.
+Wir können die obige Summe schreiben als:
+\begin{equation*}
+ber_0(x) = 1+\sum_{k=0}^{\infty} t_{k+1}^{ber}\ mit\ t_0=1\ und\ t_{k+1}^{ber}=\frac{-1}{(4k^2+6k+2)^2}(x/2)^4 t_k
+\end{equation*}
+Die andere lautet:
+\begin{equation*}
+bei_0(x) = \sum_{k=0}^{\infty}t_{k+1}^{bei}\ mit\ t_0^{bei}= (x/2)^2\ und\ t_{k+1}^{bei}=\frac{-1}{(4k^2+10k+6)^2}(x/2)^4t_k 
+\end{equation*}
+
+Für einen größeren Parameterbereich approximieren wir die Kelvinfunktionen als Real- und Imaginärteil der über asymptotische Entwicklung berechneten Besselfunktion:
+\begin{equation*}
+J(z) = \sqrt{\frac{2}{z\pi}} \cdot \cos(z-\pi/4)\ mit\ z \in \mathbb{C}
+\end{equation*}
+
+\section*{Implementierung der Lösung}
+
+Um die vorhin erwähnte Modellierung zu ermöglichen, definieren wir die Kelvin-Funktionen \verb!bei! und \verb!ber!.
+Im Parameterbereich < 10 ist ber über \verb!ber_ps! definiert.
+Dabei ist \verb!ber_ps! der über die Potenzreihendarstellung approximierte Realteil der Besselfunktion.
+Wir implementieren die Potenzreihe durch eine Schleife, die nach jeder Iteration der Variable \verb!ber_neu! den Wert der Variable t hinzuaddiert und abbricht,
+wenn der Unterscheid zwischen dem n-ten Glied der Partialsummenfolge und dem n+1-ten Glied kleiner als die Genaiuigkeit prec ist. Dabei ist t ein rekursiv definierter Ausdruck, der für das jeweilige k genau der Folgenvorschrift der Summe entspricht.
+Durch die Rekursion wird die Berechnung von mehr als 15 Termen ermöglicht, da sonst die Fakultät einen overflow von \verb!t! auslösen würde.
+
+Für einen größeren Paramterbereich ist \verb!ber! gleich dem Realteil der komplexen Besselfunktion 0-ter Ordnung $J(x\sqrt{-i})$.
+Hier ist $ x = \kappa \rho $. Um $J(x\sqrt{-i})$ zu implementieren haben wir den Header <complex.h> hinzugefügt. Mit ihm können wir J(z) als komplexe Funktion betrachten und für ber den Realteil und für bei den Imaginärteil nehmen. Damit haben wir die Kelvinfunktionen implementiert. Um ihre Ableitungen zu berechnen definiern wir die Ableitungen derive bei und derive ber. Beiden Funktionen übergeben wir neben double x und double prec einen Parameter double h. Mit ihm können wir die Ableitung dann über den Differenzenquotient berechnen, der für $h \to 0$ der Ableitung am Ort x entspricht. Um diese möglichst genau zu bestimmen wählen wir h sehr klein. Mit Hilfe der obigen Funktionen müssen wir zur Bestimmung der Stromdichte nur noch in die gegebene Formel einsetzen. Zusätzlich zur Berechnung der Stromdichte haben wir eine Möglichkeit entwickelt die Besselfunktionen mit Zuhilfenahme von gnuplot zu plotten. Dazu importieren wir das Modul "plot.h" mit dessen Hilfe wir die Funktion plotIT() definieren, die die in plot.c definierte Funktion plot(double (*funcPtr)(double),double xmin, double xmax, int n) für eine gegebene Funktion aufruft. Die Funktion plot funktioniert wie folgt wir berechnen die jeweiligen Stützstellen und die dazugehörigen Funktionswerte und übergeben diese auf einen Zeiger von einem Objekt des Dattentyps FILE. Mit dem BEfehl fprintf geben wir diese aus.
+
+\section*{Ergebnis}
+
+Wir erhalten als Ergebnis negative Stromdichten. Dies war nicht zu erwarten.
+Nimmt man den Betrag des Ergbnisses, so kann jedoch zum Teil das erwartete Ergebnis betrachtet werden.
+Je größer die Frequenz ist, desto höher ist die Stromdichte bei großen Radien, wohingegen im Innneren des
+Leiters die Stromdichte null wird.\\
+\includegraphics{plot}
+
+
+\end{document}
